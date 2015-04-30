@@ -14,11 +14,8 @@ import xml.etree.ElementTree as E
 usage = """sNowIncidentGetinfo.py <incident#> [options]
 
 Get ServiceNow Incident information, based on commandline Incident#
-Create an automatic group within IBM Endpoint Manager master-actionsite for
-       use in targetting fixlets
-
 The first parameter, the ID of the incident-in-question
-    must currently exist within IEM
+    must currently exist within SN
 
 Options:
   --user USERNAME             IEM console-login USERNAME
@@ -33,10 +30,7 @@ Examples:
     sNowIncidentGetinfo INC0000055 -u Admin -p A1rb0rn3
 
 """
-__user = 'Admin'
-__pass = 'A1rb0rn3'
 __author__ = 'singerj'
-computerName = 'GRASSKEET'
 el = ''
 
 def editTargetString(sourceStr, lookingFor, replaceStr):
@@ -82,44 +76,6 @@ if __name__ == '__main__':
             print('\nAnd now; time for something REALLY special...')
             for record in r.json()['result']:
                 print ('\n', record)
-
-# Using the endpoint names from the cmdline filename, substitute them into multiple copies of the
-# following 'stanza', leaving result in el
-        stanza = '<SearchComponentPropertyReference PropertyName="Computer Name" Comparison="Contains"><SearchText>%%computer</SearchText><Relevance>exists (computer name) whose (it as string as lowercase contains "%%computer" as lowercase)</Relevance></SearchComponentPropertyReference>'
-
-        el = el + editTargetString(stanza, '%%computer', computerName)
-
-# With the prototype XML from the indicated file, substitute the incident_name, and multiple 'stanzas', from above into the new-XML string
-        with open('protoComputerGroup.xml', 'r') as f:
-            basexml = f.read()
-            f.close()
-        newXml = editTargetString(basexml.replace('%%incident_name', incident_name), '%%miracle_happens_here', el)
-
-# If there are no cmdline arguments for username/password, just output the generated XML to the console, otherwise 'push' group into IEM.
-        if not args.user or not args.password:
-            print "\n", newXml
-#            outFn = 'final' + strftime("%H-%M-%S") + '.xml'
-#            with open(outFn, 'w') as f:
-#                f.write(newXml)
-#                f.close()
-            exit()
-
-        server = 'grasskeet'
-        port = '52311'
-        baseurl = 'https://' + server + ':' + port + '/api'
-
-        r = requests.get(baseurl+'/login',verify=False,auth=(user,password))
-        if r.status_code != 200:
-            print r.status_code
-            exit()
-
-        # After logging in, issue request to create IEM computer group with indicated name/members, printing returned XML
-        r = requests.post(baseurl+'/computergroups/master',verify=False,auth=(user, password), data=newXml)
-        if r.status_code != 200:
-            print r.status_code
-            exit()
-        else:
-            print '\nHeres the response XML about the action that I invoked: \n', r.text
 
 # Handle any exceptions, printing out error code
     except SystemExit:
